@@ -233,6 +233,35 @@ export const useSound = () => {
     oscillator.stop(context.currentTime + 0.001)
   }, [])
 
+  const previewSound = useCallback((type: SoundType) => {
+    if (!soundConfig.enabled || type === 'none') return
+    
+    if (!audioContextRef.current) {
+      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+      audioContextRef.current = new AudioContextClass()
+    }
+    
+    const context = audioContextRef.current
+    
+    switch (type) {
+      case 'bell':
+        createBellSound(context, soundConfig.indicatorVolume)
+        break
+      case 'chime':
+        createChimeSound(context, soundConfig.indicatorVolume)
+        break
+      case 'bowl':
+        createBowlSound(context, soundConfig.indicatorVolume)
+        break
+      case 'gong':
+        createGongSound(context, soundConfig.indicatorVolume)
+        break
+      case 'singing-bowl':
+        createSingingBowlSound(context, soundConfig.indicatorVolume)
+        break
+    }
+  }, [soundConfig.enabled, soundConfig.indicatorVolume])
+
   return {
     soundConfig,
     setSoundConfig,
@@ -240,6 +269,7 @@ export const useSound = () => {
     startAmbientSound,
     stopAmbientSound,
     updateAmbientVolume,
-    initializeAudio
+    initializeAudio,
+    previewSound
   }
 }

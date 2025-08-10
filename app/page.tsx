@@ -25,6 +25,7 @@ const breathingPatterns: BreathingPattern[] = [
 export default function Home() {
   const [phase, setPhase] = useState<'inhale' | 'hold1' | 'exhale' | 'hold2' | 'idle'>('idle')
   const [isBreathing, setIsBreathing] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
   const [cycles, setCycles] = useState(0)
   const [countdown, setCountdown] = useState(4)
   const [showSettings, setShowSettings] = useState(false)
@@ -49,7 +50,8 @@ export default function Home() {
     startAmbientSound,
     stopAmbientSound,
     updateAmbientVolume,
-    initializeAudio
+    initializeAudio,
+    previewSound
   } = useSound()
 
   // Sync sound config with localStorage on mount
@@ -127,11 +129,18 @@ export default function Home() {
 
   const stopBreathing = useCallback(() => {
     setIsBreathing(false)
+    setIsPaused(false)
     setPhase('idle')
     controls.start({ scale: 1 })
     setTotalBreaths(totalBreaths + cycles)
     stopAmbientSound()
   }, [controls, cycles, stopAmbientSound, setTotalBreaths, totalBreaths])
+
+  const togglePause = useCallback(() => {
+    if (isBreathing && phase !== 'idle') {
+      setIsPaused(prev => !prev)
+    }
+  }, [isBreathing, phase])
 
   const getActivePhases = useCallback(() => {
     const phases = []
@@ -157,15 +166,15 @@ export default function Home() {
 
   // Session timer
   useEffect(() => {
-    if (!isBreathing) return
+    if (!isBreathing || isPaused) return
     const interval = setInterval(() => {
       setSessionTime(prev => prev + 1)
     }, 1000)
     return () => clearInterval(interval)
-  }, [isBreathing])
+  }, [isBreathing, isPaused])
 
   useEffect(() => {
-    if (!isBreathing || phase === 'idle') return
+    if (!isBreathing || phase === 'idle' || isPaused) return
 
     const phaseDuration =
       phase === 'inhale' ? currentPattern.inhale :
@@ -233,7 +242,7 @@ export default function Home() {
       clearTimeout(timer)
       clearInterval(countdownInterval)
     }
-  }, [phase, isBreathing, currentPattern, controls, playPhaseSound, cycles])
+  }, [phase, isBreathing, isPaused, currentPattern, controls, playPhaseSound, cycles])
 
   const getPhaseText = () => {
     switch (phase) {
@@ -246,7 +255,7 @@ export default function Home() {
       case 'hold2':
         return 'Hold empty'
       case 'idle':
-        return 'Begin'
+        return isPaused ? 'Paused' : 'Begin'
       default:
         return ''
     }
@@ -273,6 +282,10 @@ export default function Home() {
       // Escape to close settings
       if (e.code === 'Escape' && showSettings) {
         setShowSettings(false)
+        // Resume if was paused by settings
+        if (isBreathing && isPaused) {
+          setIsPaused(false)
+        }
       }
       // 'S' to toggle settings
       if (e.code === 'KeyS' && !e.metaKey && !e.ctrlKey) {
@@ -319,7 +332,13 @@ export default function Home() {
           WebkitBackdropFilter: isMobile ? 'blur(8px)' : 'blur(20px)',
           border: '1px solid rgba(255,255,255,0.1)',
         }}
-        onClick={() => setShowSettings(!showSettings)}
+        onClick={() => {
+          setShowSettings(!showSettings)
+          // Auto-pause if breathing
+          if (isBreathing && !showSettings) {
+            setIsPaused(true)
+          }
+        }}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
@@ -350,7 +369,7 @@ export default function Home() {
           {/* Session stats - shown during breathing */}
           {isBreathing && (cycles > 0 || sessionTime > 0) && (
             <div className="bg-white/5 backdrop-blur-md rounded-xl px-4 py-2 border border-white/10">
-              <div className="text-xs text-white/50">Session</div>
+              <div className="text-xs text-white/50">Session {isPaused ? '(Paused)' : ''}</div>
               <div className="text-sm text-white/90 font-light">{formatTime(sessionTime)}</div>
               <div className="text-xs text-white/50 mt-1">Cycles: {cycles}</div>
             </div>
@@ -385,7 +404,13 @@ export default function Home() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => setShowSettings(false)}
+            onClick={() => {
+              setShowSettings(false)
+              // Resume if was paused by settings
+              if (isBreathing && isPaused) {
+                setIsPaused(false)
+              }
+            }}
           >
             <motion.div
               className={`bg-gray-900/90 backdrop-blur-xl rounded-3xl ${isMobile ? 'p-4 pb-20' : 'p-6 sm:p-8'} max-w-lg w-full my-auto border border-white/10 max-h-[90vh] ${isMobile ? 'flex flex-col' : ''}`}
@@ -507,18 +532,28 @@ export default function Home() {
                   >
                     <div>
                       <label className="text-xs text-white/50 block mb-2">Phase Indicator Sound</label>
-                      <select
-                        value={soundConfig.phaseIndicator}
-                        onChange={(e) => setSoundConfig({ ...soundConfig, phaseIndicator: e.target.value as SoundType })}
-                        className="w-full bg-white/10 text-white rounded-lg px-3 py-2 text-sm border border-white/10"
-                      >
-                        <option value="bell">Bell</option>
-                        <option value="chime">Wind Chime</option>
-                        <option value="bowl">Tibetan Bowl</option>
-                        <option value="gong">Deep Gong</option>
-                        <option value="singing-bowl">Singing Bowl (Moodist)</option>
-                        <option value="none">None</option>
-                      </select>
+                      <div className="flex gap-2">
+                        <select
+                          value={soundConfig.phaseIndicator}
+                          onChange={(e) => setSoundConfig({ ...soundConfig, phaseIndicator: e.target.value as SoundType })}
+                          className="flex-1 bg-white/10 text-white rounded-lg px-3 py-2 text-sm border border-white/10"
+                        >
+                          <option value="bell">Bell</option>
+                          <option value="chime">Wind Chime</option>
+                          <option value="bowl">Tibetan Bowl</option>
+                          <option value="gong">Deep Gong</option>
+                          <option value="singing-bowl">Singing Bowl (Moodist)</option>
+                          <option value="none">None</option>
+                        </select>
+                        {soundConfig.phaseIndicator !== 'none' && (
+                          <button
+                            onClick={() => previewSound(soundConfig.phaseIndicator)}
+                            className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors text-sm"
+                          >
+                            Preview
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     <div>
@@ -597,7 +632,13 @@ export default function Home() {
 
               {/* Done button - fixed on mobile */}
               <button
-                onClick={() => setShowSettings(false)}
+                onClick={() => {
+                  setShowSettings(false)
+                  // Resume if was paused by settings
+                  if (isBreathing && isPaused) {
+                    setIsPaused(false)
+                  }
+                }}
                 className={`${isMobile ? 'fixed bottom-4 left-4 right-4 z-40' : 'w-full mt-4'} py-3 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-colors backdrop-blur-md`}
               >
                 Done
@@ -659,15 +700,24 @@ export default function Home() {
               }}
             />
 
-            {/* Inner breathing orb */}
+            {/* Inner breathing orb - clickable to pause/resume */}
             <div className="absolute inset-8 flex items-center justify-center">
-              <div
+              <motion.div
                 className={`${isMobile ? 'w-40 h-40' : 'w-48 h-48'} rounded-full relative breathing-orb backdrop-blur-optimized ${
-                  phase === 'inhale' ? 'breathing-inhale' :
-                  phase === 'hold1' ? 'breathing-hold1' :
-                  phase === 'exhale' ? 'breathing-exhale' :
-                  phase === 'hold2' ? 'breathing-hold2' : ''
-                } ${isMobile ? 'mobile-simple-shadow' : ''}`}
+                  !isPaused && (
+                    phase === 'inhale' ? 'breathing-inhale' :
+                    phase === 'hold1' ? 'breathing-hold1' :
+                    phase === 'exhale' ? 'breathing-exhale' :
+                    phase === 'hold2' ? 'breathing-hold2' : ''
+                  )
+                } ${isMobile ? 'mobile-simple-shadow' : ''} ${isBreathing && phase !== 'idle' ? 'cursor-pointer' : ''}`}
+                onClick={isBreathing && phase !== 'idle' ? () => togglePause() : undefined}
+                onTouchEnd={isBreathing && phase !== 'idle' && isMobile ? (e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                } : undefined}
+                whileHover={isBreathing && phase !== 'idle' && !isMobile ? { scale: 1.02 } : {}}
+                whileTap={isBreathing && phase !== 'idle' ? { scale: 0.98 } : {}}
                 style={{
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   ['--inhale-duration' as any]: `${currentPattern.inhale}s`,
@@ -692,7 +742,11 @@ export default function Home() {
                       0 0 60px rgba(59, 130, 246, ${isBreathing ? 0.3 : 0.1}),
                       0 0 100px rgba(147, 51, 234, ${isBreathing ? 0.2 : 0.05})
                     `,
-                  transition: 'background 0.6s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.6s cubic-bezier(0.32, 0.72, 0, 1)'
+                  transition: 'background 0.6s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.6s cubic-bezier(0.32, 0.72, 0, 1)',
+                  pointerEvents: isBreathing && phase !== 'idle' ? 'auto' : 'none',
+                  zIndex: 1,
+                  WebkitTapHighlightColor: 'transparent',
+                  touchAction: 'manipulation'
                 }}
               >
                 {/* Liquid highlight - disable rotation on mobile */}
@@ -726,20 +780,20 @@ export default function Home() {
                     >
                       <div className={`${isMobile ? 'text-5xl' : 'text-7xl'} font-ultralight text-white mb-1`}
                         style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }}>
-                        {phase !== 'idle' ? countdown : '–'}
+                        {phase !== 'idle' ? (isPaused ? '||' : countdown) : '–'}
                       </div>
                       <div className="text-sm font-medium text-white/80 tracking-wide uppercase">
-                        {getPhaseText()}
+                        {isPaused && phase !== 'idle' ? 'Paused' : getPhaseText()}
                       </div>
                       {phase !== 'idle' && totalPhases > 0 && (
                         <div className="text-xs font-light text-white/40 mt-1">
-                          Phase {currentPhaseIndex} of {totalPhases}
+                          {isPaused ? 'Tap to resume' : `Phase ${currentPhaseIndex} of ${totalPhases}`}
                         </div>
                       )}
                     </motion.div>
                   </AnimatePresence>
                 </div>
-              </div>
+              </motion.div>
             </div>
 
             {/* Progress ring */}
@@ -767,7 +821,8 @@ export default function Home() {
                   style={{
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     ['--cycle-duration' as any]: `${totalCycleDuration}s`,
-                    strokeDashoffset: 980
+                    strokeDashoffset: 980,
+                    animationPlayState: isPaused ? 'paused' : 'running'
                   }}
                 />
               )}
