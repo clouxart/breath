@@ -93,8 +93,8 @@ export const useSound = () => {
   const ambientSourceRef = useRef<AudioBufferSourceNode | null>(null)
   const ambientGainRef = useRef<GainNode | null>(null)
   const ambientAudioRef = useRef<HTMLAudioElement | null>(null)
-  const previewTimeoutsRef = useRef<NodeJS.Timeout[]>([])
-  const phaseTimeoutsRef = useRef<NodeJS.Timeout[]>([])
+  const previewTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([])
+  const phaseTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([])
   const phaseSoundsRef = useRef<HTMLAudioElement[]>([])
   
   const [soundConfig, setSoundConfig] = useState<SoundConfig>({

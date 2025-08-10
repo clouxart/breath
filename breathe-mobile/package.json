@@ -1,0 +1,45 @@
+{
+  "name": "breathe-mobile",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "clean": "rm -rf node_modules .expo && npm install",
+    "doctor": "npx expo-doctor",
+    "prebuild": "expo prebuild",
+    "build:ios": "eas build --platform ios",
+    "build:android": "eas build --platform android",
+    "build:all": "eas build --platform all",
+    "dev:ios": "expo run:ios",
+    "dev:android": "expo run:android",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@expo/metro-runtime": "~5.0.4",
+    "@react-native-async-storage/async-storage": "2.1.2",
+    "@react-native-community/slider": "^4.5.7",
+    "@react-native-picker/picker": "^2.11.1",
+    "expo": "~53.0.20",
+    "expo-av": "^15.1.7",
+    "expo-blur": "^14.1.5",
+    "expo-haptics": "^14.1.4",
+    "expo-linear-gradient": "^14.1.5",
+    "expo-status-bar": "~2.2.3",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "react-native": "0.79.5",
+    "react-native-reanimated": "~3.17.4",
+    "react-native-safe-area-context": "5.4.0",
+    "react-native-screens": "~4.11.1",
+    "react-native-web": "^0.20.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@types/react": "~19.0.10",
+    "typescript": "~5.8.3"
+  },
+  "private": true
+}
