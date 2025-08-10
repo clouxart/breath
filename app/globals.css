@@ -5,6 +5,109 @@ body {
   padding: 0;
 }
 
+/* Performance optimizations */
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.backdrop-blur-optimized {
+  transform: translateZ(0);
+  will-change: backdrop-filter;
+  backface-visibility: hidden;
+}
+
+/* Breathing animations using pure CSS */
+@keyframes breatheIn {
+  from { transform: scale(1) translateZ(0); }
+  to { transform: scale(1.25) translateZ(0); }
+}
+
+@keyframes breatheOut {
+  from { transform: scale(1.25) translateZ(0); }
+  to { transform: scale(0.75) translateZ(0); }
+}
+
+@keyframes holdBreath {
+  from { transform: scale(1.25) translateZ(0); }
+  to { transform: scale(1.25) translateZ(0); }
+}
+
+@keyframes holdEmpty {
+  from { transform: scale(0.75) translateZ(0); }
+  to { transform: scale(0.75) translateZ(0); }
+}
+
+.breathing-orb {
+  transform-origin: center;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.breathing-inhale {
+  animation: breatheIn var(--inhale-duration) cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+.breathing-hold1 {
+  animation: holdBreath var(--hold1-duration) linear forwards;
+}
+
+.breathing-exhale {
+  animation: breatheOut var(--exhale-duration) cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+.breathing-hold2 {
+  animation: holdEmpty var(--hold2-duration) linear forwards;
+}
+
+/* Progress ring animation - continuous for full cycle */
+@keyframes progressRingCycle {
+  from {
+    stroke-dashoffset: 980;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.progress-ring-cycle {
+  animation: progressRingCycle var(--cycle-duration) linear infinite;
+  will-change: stroke-dashoffset;
+}
+
+/* Optimized background animations */
+@keyframes floatOptimized {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  33% { transform: translate3d(100px, 50px, 0); }
+  66% { transform: translate3d(50px, -25px, 0); }
+}
+
+.floating-gradient {
+  will-change: transform;
+  animation: floatOptimized 20s ease-in-out infinite;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Mobile-specific optimizations */
+@media (max-width: 768px) {
+  .backdrop-blur-optimized {
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+  }
+  
+  .floating-gradient {
+    animation-duration: 30s;
+  }
+  
+  /* Disable complex shadows on mobile */
+  .mobile-simple-shadow {
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3) !important;
+  }
+}
+
 /* Custom scrollbar styles for settings panel */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;

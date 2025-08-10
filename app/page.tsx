@@ -62,11 +62,23 @@ export default function Home() {
     setStoredSoundConfig(soundConfig)
   }, [soundConfig, setStoredSoundConfig])
   const [sessionTime, setSessionTime] = useState(0)
-  const [progressOffset, setProgressOffset] = useState(980)
-  const [targetOffset, setTargetOffset] = useState(980)
+  const [animationKey, setAnimationKey] = useState(0)
+  const [totalCycleDuration, setTotalCycleDuration] = useState(0)
 
   const controls = useAnimation()
   const currentPattern = selectedPattern === 4 ? customDurations : breathingPatterns[selectedPattern]
+  
+  // Update total cycle duration when pattern changes
+  useEffect(() => {
+    const total = currentPattern.inhale + currentPattern.hold1 + currentPattern.exhale + currentPattern.hold2
+    setTotalCycleDuration(total)
+    // If we're currently breathing, restart from the beginning with new pattern
+    if (isBreathing && phase !== 'idle') {
+      setPhase('inhale')
+      setAnimationKey(prev => prev + 1)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPattern, customDurations]) // Only trigger on actual pattern/duration changes, not derived values
 
   // Detect mobile device
   const [isMobile, setIsMobile] = useState(false)
@@ -104,11 +116,14 @@ export default function Home() {
     setPhase('inhale')
     setCycles(0)
     setSessionTime(0)
-    setProgressOffset(980)
+    setAnimationKey(prev => prev + 1) // Increment key to restart animation
+    // Calculate total cycle duration
+    const total = currentPattern.inhale + currentPattern.hold1 + currentPattern.exhale + currentPattern.hold2
+    setTotalCycleDuration(total)
     if (soundConfig.enabled && soundConfig.ambient !== 'none') {
       startAmbientSound()
     }
-  }, [soundConfig, startAmbientSound])
+  }, [soundConfig, startAmbientSound, currentPattern])
 
   const stopBreathing = useCallback(() => {
     setIsBreathing(false)
@@ -184,52 +199,7 @@ export default function Home() {
     // Play sound for phase transition
     playPhaseSound(phase)
 
-    // Calculate progress ring animation
-    const activePhases = getActivePhases()
-    const phaseProgress = 980 / activePhases.length
-    const currentPhaseIndex = activePhases.indexOf(phase)
-    const startOffset = 980 - (phaseProgress * currentPhaseIndex)
-    const endOffset = 980 - (phaseProgress * (currentPhaseIndex + 1))
-
-    // Set initial offset for this phase
-    setProgressOffset(startOffset)
-    setTargetOffset(endOffset)
-
-    // Animate smoothly over the phase duration
-    const progressInterval = setInterval(() => {
-      setProgressOffset(prev => {
-        const current = prev
-        const target = targetOffset
-        const step = (startOffset - endOffset) / (phaseDuration * 10) // 100ms intervals
-        const newOffset = current - step
-
-        // Stop at the target
-        if (newOffset <= target) {
-          return target
-        }
-
-        return newOffset
-      })
-    }, 100)
-
-    // Smooth, liquid-like scaling
-    if (phase === 'inhale') {
-      controls.start({
-        scale: 1.25,
-        transition: {
-          duration: phaseDuration,
-          ease: [0.32, 0.72, 0, 1]
-        }
-      })
-    } else if (phase === 'exhale') {
-      controls.start({
-        scale: 0.75,
-        transition: {
-          duration: phaseDuration,
-          ease: [0.32, 0.72, 0, 1]
-        }
-      })
-    }
+    // CSS animations handle the breathing orb scaling now
 
     // Countdown timer
     const countdownInterval = setInterval(() => {
@@ -262,9 +232,8 @@ export default function Home() {
     return () => {
       clearTimeout(timer)
       clearInterval(countdownInterval)
-      clearInterval(progressInterval)
     }
-  }, [phase, isBreathing, currentPattern, controls, targetOffset, playPhaseSound, getActivePhases])
+  }, [phase, isBreathing, currentPattern, controls, playPhaseSound, cycles])
 
   const getPhaseText = () => {
     switch (phase) {
@@ -322,7 +291,7 @@ export default function Home() {
 
   return (
     <motion.div
-      className="min-h-screen bg-black flex flex-col items-center justify-center p-8 overflow-hidden relative"
+      className={`min-h-screen bg-black flex flex-col items-center justify-center ${isMobile ? 'p-4' : 'p-8'} overflow-hidden relative`}
       onMouseMove={handleMouseMove}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -331,35 +300,19 @@ export default function Home() {
       {/* Gradient mesh background - Apple style */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-b from-gray-900 via-black to-black" />
-        <motion.div
-          className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[120px]"
-          animate={{
-            x: [0, 100, 0],
-            y: [0, 50, 0],
-          }}
-          transition={{
-            duration: 20,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
+        <div 
+          className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[120px] floating-gradient gpu-accelerated"
+          style={{ animationDelay: '0s' }}
         />
-        <motion.div
-          className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-purple-600/20 rounded-full blur-[120px]"
-          animate={{
-            x: [0, -100, 0],
-            y: [0, -50, 0],
-          }}
-          transition={{
-            duration: 25,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
+        <div 
+          className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-purple-600/20 rounded-full blur-[120px] floating-gradient gpu-accelerated"
+          style={{ animationDelay: '5s' }}
         />
       </div>
 
       {/* Settings button */}
       <motion.button
-        className="absolute top-8 right-8 z-20 p-3 rounded-full"
+        className="absolute top-8 right-8 z-20 p-3 rounded-full backdrop-blur-optimized"
         style={{
           background: 'rgba(255,255,255,0.05)',
           backdropFilter: isMobile ? 'blur(8px)' : 'blur(20px)',
@@ -388,9 +341,9 @@ export default function Home() {
       </motion.button>
 
       {/* Stats display */}
-      {(cycles > 0 || totalBreaths > 0) && (
+      {isBreathing && (cycles > 0 || sessionTime > 0) && (
         <motion.div
-          className="absolute top-8 left-8 z-20"
+          className={`${isMobile ? 'fixed bottom-24 left-4' : 'absolute top-8 left-8'} z-20`}
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
         >
@@ -400,19 +353,29 @@ export default function Home() {
               <div className="text-sm text-white/90 font-light">{formatTime(sessionTime)}</div>
               <div className="text-xs text-white/50 mt-1">Cycles: {cycles}</div>
             </div>
-            {totalBreaths > 0 && (
-              <div className="bg-white/5 backdrop-blur-md rounded-xl px-4 py-2 border border-white/10 group cursor-pointer"
-                onClick={() => {
-                  if (window.confirm('Reset total breath count?')) {
-                    setTotalBreaths(0)
-                  }
-                }}
-                title="Click to reset">
-                <div className="text-xs text-white/50">Total lifetime</div>
-                <div className="text-sm text-white/90 font-light">{totalBreaths} breaths</div>
-                <div className="text-xs text-white/30 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Click to reset</div>
-              </div>
-            )}
+          </div>
+        </motion.div>
+      )}
+      
+      {/* Total breaths display - separate from session stats */}
+      {totalBreaths > 0 && !isBreathing && (
+        <motion.div
+          className={`${isMobile ? 'fixed bottom-24 left-4' : 'absolute top-8 left-8'} z-20`}
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+        >
+          <div className="space-y-2">
+            <div className="bg-white/5 backdrop-blur-md rounded-xl px-4 py-2 border border-white/10 group cursor-pointer"
+              onClick={() => {
+                if (window.confirm('Reset total breath count?')) {
+                  setTotalBreaths(0)
+                }
+              }}
+              title="Click to reset">
+              <div className="text-xs text-white/50">Total lifetime</div>
+              <div className="text-sm text-white/90 font-light">{totalBreaths} breaths</div>
+              <div className="text-xs text-white/30 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Click to reset</div>
+            </div>
           </div>
         </motion.div>
       )}
@@ -428,14 +391,14 @@ export default function Home() {
             onClick={() => setShowSettings(false)}
           >
             <motion.div
-              className="bg-gray-900/90 backdrop-blur-xl rounded-3xl p-6 sm:p-8 max-w-lg w-full my-auto border border-white/10 max-h-[90vh] overflow-y-auto custom-scrollbar"
+              className={`bg-gray-900/90 backdrop-blur-xl rounded-3xl ${isMobile ? 'p-4 pb-20' : 'p-6 sm:p-8'} max-w-lg w-full my-auto border border-white/10 max-h-[90vh] ${isMobile ? 'flex flex-col' : ''}`}
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.2) transparent' }}
             >
-              <h2 className="text-2xl font-light text-white mb-6">Breathing Patterns</h2>
+              <div className={`${isMobile ? 'flex-1 overflow-y-auto' : 'overflow-y-auto custom-scrollbar max-h-[calc(90vh-100px)]'}`} style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.2) transparent' }}>
+                <h2 className="text-2xl font-light text-white mb-6">Breathing Patterns</h2>
 
               <div className="space-y-3 mb-6">
                 {breathingPatterns.map((pattern, index) => (
@@ -632,11 +595,13 @@ export default function Home() {
                     <kbd className="px-2 py-1 bg-white/10 rounded">Esc</kbd>
                   </div>
                 </div>
+                </div>
               </div>
 
+              {/* Done button - fixed on mobile */}
               <button
                 onClick={() => setShowSettings(false)}
-                className="w-full py-3 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-colors"
+                className={`${isMobile ? 'fixed bottom-4 left-4 right-4 z-40' : 'w-full mt-4'} py-3 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-colors backdrop-blur-md`}
               >
                 Done
               </button>
@@ -645,14 +610,14 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      <div className="max-w-2xl w-full space-y-12 text-center relative z-10">
+      <div className={`max-w-2xl w-full ${isMobile ? 'space-y-6' : 'space-y-12'} text-center relative z-10`}>
         {/* Apple-style typography */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 1, delay: 0.2, ease: [0.32, 0.72, 0, 1] }}
         >
-          <h1 className="text-7xl font-semibold text-white tracking-tight mb-4"
+          <h1 className={`${isMobile ? 'text-5xl' : 'text-7xl'} font-semibold text-white tracking-tight mb-4`}
             style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }}>
             Breathe
           </h1>
@@ -663,7 +628,7 @@ export default function Home() {
 
         {/* Main breathing visualization */}
         <motion.div
-          className="relative w-96 h-96 mx-auto"
+          className={`relative ${isMobile ? 'w-80 h-80' : 'w-96 h-96'} mx-auto`}
           style={{
             perspective: 1200,
             transformStyle: 'preserve-3d'
@@ -682,34 +647,39 @@ export default function Home() {
             }}
           >
             {/* Outer glass ring */}
-            <motion.div
-              className="absolute inset-0 rounded-full"
+            <div
+              className={`absolute inset-0 rounded-full backdrop-blur-optimized ${isMobile ? 'mobile-simple-shadow' : ''}`}
               style={{
                 background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
                 backdropFilter: isMobile ? 'blur(8px)' : 'blur(20px)',
-          WebkitBackdropFilter: isMobile ? 'blur(8px)' : 'blur(20px)',
+                WebkitBackdropFilter: isMobile ? 'blur(8px)' : 'blur(20px)',
                 border: '1px solid rgba(255,255,255,0.1)',
                 boxShadow: isMobile 
-                  ? '0 10px 30px rgba(0,0,0,0.3)'
+                  ? undefined
                   : 'inset 0 0 40px rgba(255,255,255,0.05), 0 20px 40px -20px rgba(0,0,0,0.5)',
-              }}
-              animate={{
-                scale: isBreathing ? [1, 1.05, 1] : 1,
-              }}
-              transition={{
-                duration: (currentPattern.inhale + currentPattern.hold1 + currentPattern.exhale + currentPattern.hold2) || 8,
-                repeat: isBreathing ? Infinity : 0,
-                ease: [0.32, 0.72, 0, 1]
+                transform: isBreathing ? 'scale(1.02)' : 'scale(1)',
+                transition: 'transform 2s cubic-bezier(0.32, 0.72, 0, 1)'
               }}
             />
 
             {/* Inner breathing orb */}
             <div className="absolute inset-8 flex items-center justify-center">
-              <motion.div
-                animate={controls}
-                initial={{ scale: 1 }}
-                className="w-48 h-48 rounded-full relative"
+              <div
+                className={`${isMobile ? 'w-40 h-40' : 'w-48 h-48'} rounded-full relative breathing-orb backdrop-blur-optimized ${
+                  phase === 'inhale' ? 'breathing-inhale' :
+                  phase === 'hold1' ? 'breathing-hold1' :
+                  phase === 'exhale' ? 'breathing-exhale' :
+                  phase === 'hold2' ? 'breathing-hold2' : ''
+                } ${isMobile ? 'mobile-simple-shadow' : ''}`}
                 style={{
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  ['--inhale-duration' as any]: `${currentPattern.inhale}s`,
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  ['--hold1-duration' as any]: `${currentPattern.hold1}s`,
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  ['--exhale-duration' as any]: `${currentPattern.exhale}s`,
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  ['--hold2-duration' as any]: `${currentPattern.hold2}s`,
                   background: phase === 'idle'
                     ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(147, 51, 234, 0.3) 100%)'
                     : phase === 'inhale' || phase === 'hold1'
@@ -717,34 +687,34 @@ export default function Home() {
                       : 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(147, 51, 234, 0.2) 100%)',
                   backdropFilter: isMobile ? 'blur(12px)' : 'blur(40px)',
                   WebkitBackdropFilter: isMobile ? 'blur(12px)' : 'blur(40px)',
-                  transform: 'translateZ(0)', // Force GPU acceleration
-                  willChange: 'transform',
                   border: '1px solid rgba(255,255,255,0.2)',
                   boxShadow: isMobile
-                    ? `0 0 40px rgba(59, 130, 246, ${isBreathing ? 0.3 : 0.1})`
+                    ? undefined
                     : `
                       inset 0 0 30px rgba(255,255,255,0.1),
                       0 0 60px rgba(59, 130, 246, ${isBreathing ? 0.3 : 0.1}),
                       0 0 100px rgba(147, 51, 234, ${isBreathing ? 0.2 : 0.05})
                     `,
-                  transition: 'all 0.6s cubic-bezier(0.32, 0.72, 0, 1)'
+                  transition: 'background 0.6s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.6s cubic-bezier(0.32, 0.72, 0, 1)'
                 }}
               >
                 {/* Liquid highlight - disable rotation on mobile */}
-                <motion.div
-                  className="absolute inset-2 rounded-full"
-                  style={{
-                    background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.3) 0%, transparent 60%)',
-                  }}
-                  animate={isMobile ? {} : {
-                    rotate: [0, 360],
-                  }}
-                  transition={isMobile ? {} : {
-                    duration: 30,
-                    repeat: Infinity,
-                    ease: "linear"
-                  }}
-                />
+                {!isMobile && (
+                  <motion.div
+                    className="absolute inset-2 rounded-full gpu-accelerated"
+                    style={{
+                      background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.3) 0%, transparent 60%)',
+                    }}
+                    animate={{
+                      rotate: [0, 360],
+                    }}
+                    transition={{
+                      duration: 30,
+                      repeat: Infinity,
+                      ease: "linear"
+                    }}
+                  />
+                )}
 
                 {/* Phase indicator */}
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -757,7 +727,7 @@ export default function Home() {
                       transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
                       className="text-center"
                     >
-                      <div className="text-7xl font-ultralight text-white mb-1"
+                      <div className={`${isMobile ? 'text-5xl' : 'text-7xl'} font-ultralight text-white mb-1`}
                         style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }}>
                         {phase !== 'idle' ? countdown : '–'}
                       </div>
@@ -772,7 +742,7 @@ export default function Home() {
                     </motion.div>
                   </AnimatePresence>
                 </div>
-              </motion.div>
+              </div>
             </div>
 
             {/* Progress ring */}
@@ -785,8 +755,9 @@ export default function Home() {
                 stroke="rgba(255,255,255,0.05)"
                 strokeWidth="1"
               />
-              {isBreathing && phase !== 'idle' && (
+              {isBreathing && phase !== 'idle' && totalCycleDuration > 0 && (
                 <circle
+                  key={animationKey} // Only restart when session starts
                   cx="160"
                   cy="160"
                   r="156"
@@ -795,10 +766,11 @@ export default function Home() {
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeDasharray={980}
-                  strokeDashoffset={progressOffset}
+                  className="progress-ring-cycle"
                   style={{
-                    transition: 'stroke-dashoffset 0.1s linear',
-                    willChange: 'stroke-dashoffset'
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    ['--cycle-duration' as any]: `${totalCycleDuration}s`,
+                    strokeDashoffset: 980
                   }}
                 />
               )}
@@ -841,11 +813,11 @@ export default function Home() {
               <motion.button
                 key="start"
                 onClick={startBreathing}
-                className="relative group px-10 py-5 rounded-full overflow-hidden"
+                className="relative group px-10 py-5 rounded-full overflow-hidden backdrop-blur-optimized"
                 style={{
                   background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(147, 51, 234, 0.2) 100%)',
                   backdropFilter: isMobile ? 'blur(8px)' : 'blur(20px)',
-          WebkitBackdropFilter: isMobile ? 'blur(8px)' : 'blur(20px)',
+                  WebkitBackdropFilter: isMobile ? 'blur(8px)' : 'blur(20px)',
                   border: '1px solid rgba(255,255,255,0.1)',
                   boxShadow: '0 10px 40px -10px rgba(59, 130, 246, 0.4)',
                 }}
@@ -869,11 +841,11 @@ export default function Home() {
               <motion.button
                 key="stop"
                 onClick={stopBreathing}
-                className="relative group px-10 py-5 rounded-full overflow-hidden"
+                className="relative group px-10 py-5 rounded-full overflow-hidden backdrop-blur-optimized"
                 style={{
                   background: 'rgba(255,255,255,0.05)',
                   backdropFilter: isMobile ? 'blur(8px)' : 'blur(20px)',
-          WebkitBackdropFilter: isMobile ? 'blur(8px)' : 'blur(20px)',
+                  WebkitBackdropFilter: isMobile ? 'blur(8px)' : 'blur(20px)',
                   border: '1px solid rgba(255,255,255,0.1)',
                 }}
                 initial={{ opacity: 0 }}
@@ -899,7 +871,7 @@ export default function Home() {
 
       {/* Footer attribution */}
       <motion.div
-        className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-white/30 text-center"
+        className={`${isMobile ? 'fixed' : 'absolute'} bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-white/30 text-center`}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 2, duration: 1 }}
