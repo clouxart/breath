@@ -93,6 +93,7 @@ export const useSound = () => {
   const ambientSourceRef = useRef<AudioBufferSourceNode | null>(null)
   const ambientGainRef = useRef<GainNode | null>(null)
   const ambientAudioRef = useRef<HTMLAudioElement | null>(null)
+  const previewTimeoutsRef = useRef<NodeJS.Timeout[]>([])
   
   const [soundConfig, setSoundConfig] = useState<SoundConfig>({
     phaseIndicator: 'bell',
@@ -255,8 +256,17 @@ export const useSound = () => {
     oscillator.stop(context.currentTime + 0.001)
   }, [])
 
+  const stopPreviewSounds = useCallback(() => {
+    // Clear all preview timeouts
+    previewTimeoutsRef.current.forEach(timeout => clearTimeout(timeout))
+    previewTimeoutsRef.current = []
+  }, [])
+
   const previewSound = useCallback((type: SoundType) => {
     if (!soundConfig.enabled || type === 'none') return
+    
+    // Clear any existing preview sounds
+    stopPreviewSounds()
     
     if (!audioContextRef.current) {
       const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
@@ -270,7 +280,11 @@ export const useSound = () => {
         createBellSound(context, soundConfig.indicatorVolume)
         break
       case 'chime':
-        createChimeSound(context, soundConfig.indicatorVolume)
+        // Store timeouts for chime sounds so they can be cancelled
+        const timeout1 = setTimeout(() => createOscillatorSound(context, 659.25, 'sine', 0.8, soundConfig.indicatorVolume * 0.4), 0)
+        const timeout2 = setTimeout(() => createOscillatorSound(context, 783.99, 'sine', 0.8, soundConfig.indicatorVolume * 0.4), 100)
+        const timeout3 = setTimeout(() => createOscillatorSound(context, 987.77, 'sine', 0.8, soundConfig.indicatorVolume * 0.4), 200)
+        previewTimeoutsRef.current = [timeout1, timeout2, timeout3]
         break
       case 'bowl':
         createBowlSound(context, soundConfig.indicatorVolume)
@@ -282,7 +296,7 @@ export const useSound = () => {
         createSingingBowlSound(context, soundConfig.indicatorVolume)
         break
     }
-  }, [soundConfig.enabled, soundConfig.indicatorVolume])
+  }, [soundConfig.enabled, soundConfig.indicatorVolume, stopPreviewSounds])
 
   return {
     soundConfig,
@@ -294,6 +308,7 @@ export const useSound = () => {
     resumeAmbientSound,
     updateAmbientVolume,
     initializeAudio,
-    previewSound
+    previewSound,
+    stopPreviewSounds
   }
 }

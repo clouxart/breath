@@ -53,7 +53,8 @@ export default function Home() {
     resumeAmbientSound,
     updateAmbientVolume,
     initializeAudio,
-    previewSound
+    previewSound,
+    stopPreviewSounds
   } = useSound()
 
   // Sync sound config with localStorage on mount
@@ -521,6 +522,10 @@ export default function Home() {
                         setSoundConfig({ ...soundConfig, enabled: newEnabled })
                         if (newEnabled) {
                           initializeAudio()
+                        } else {
+                          // Stop all sounds when disabling
+                          stopAmbientSound()
+                          stopPreviewSounds()
                         }
                       }}
                       className={`relative w-12 h-6 rounded-full transition-colors ${soundConfig.enabled ? 'bg-blue-500' : 'bg-gray-600'
@@ -669,9 +674,28 @@ export default function Home() {
             style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }}>
             Breathe
           </h1>
-          <p className="text-xl text-gray-400 font-light">
-            {breathingPatterns[selectedPattern].name}
-          </p>
+          <motion.button
+            onClick={() => {
+              // Cycle through all patterns including Custom
+              const nextPattern = (selectedPattern + 1) % breathingPatterns.length
+              setSelectedPattern(nextPattern)
+            }}
+            className="group cursor-pointer inline-block"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <div className="flex items-center gap-2 justify-center">
+              <p className="text-xl text-gray-400 font-light group-hover:text-white/70 transition-colors">
+                {breathingPatterns[selectedPattern].name}
+              </p>
+              <span className="text-sm text-gray-500 font-light group-hover:text-white/50 transition-colors">
+                ({currentPattern.inhale}-{currentPattern.hold1}-{currentPattern.exhale}-{currentPattern.hold2})
+              </span>
+            </div>
+            <p className="text-xs text-gray-500 font-light opacity-0 group-hover:opacity-100 transition-opacity mt-1">
+              Click to change • Press S for more options
+            </p>
+          </motion.button>
         </motion.div>
 
         {/* Main breathing visualization */}
