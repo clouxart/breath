@@ -1,0 +1,19 @@
+{
+  "name": "Breathe - Box Breathing & Meditation",
+  "short_name": "Breathe",
+  "description": "Practice mindful breathing with beautiful animations and ambient sounds",
+  "theme_color": "#000000",
+  "background_color": "#000000",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
