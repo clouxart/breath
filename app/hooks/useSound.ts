@@ -209,6 +209,20 @@ export const useSound = () => {
     }
   }, [])
 
+  const pauseAmbientSound = useCallback(() => {
+    if (ambientAudioRef.current) {
+      ambientAudioRef.current.pause()
+    }
+  }, [])
+
+  const resumeAmbientSound = useCallback(() => {
+    if (ambientAudioRef.current) {
+      ambientAudioRef.current.play().catch(err => {
+        console.warn('Failed to resume ambient sound:', err)
+      })
+    }
+  }, [])
+
   const updateAmbientVolume = useCallback((volume: number) => {
     if (ambientGainRef.current) {
       ambientGainRef.current.gain.value = volume
@@ -276,6 +290,8 @@ export const useSound = () => {
     playPhaseSound,
     startAmbientSound,
     stopAmbientSound,
+    pauseAmbientSound,
+    resumeAmbientSound,
     updateAmbientVolume,
     initializeAudio,
     previewSound

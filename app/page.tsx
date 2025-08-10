@@ -49,6 +49,8 @@ export default function Home() {
     playPhaseSound,
     startAmbientSound,
     stopAmbientSound,
+    pauseAmbientSound,
+    resumeAmbientSound,
     updateAmbientVolume,
     initializeAudio,
     previewSound
@@ -138,9 +140,17 @@ export default function Home() {
 
   const togglePause = useCallback(() => {
     if (isBreathing && phase !== 'idle') {
-      setIsPaused(prev => !prev)
+      setIsPaused(prev => {
+        const newPaused = !prev
+        if (newPaused) {
+          pauseAmbientSound()
+        } else {
+          resumeAmbientSound()
+        }
+        return newPaused
+      })
     }
-  }, [isBreathing, phase])
+  }, [isBreathing, phase, pauseAmbientSound, resumeAmbientSound])
 
   const getActivePhases = useCallback(() => {
     const phases = []
@@ -681,8 +691,12 @@ export default function Home() {
             style={{
               rotateX,
               rotateY,
-              transformStyle: 'preserve-3d'
+              transformStyle: 'preserve-3d',
+              cursor: isBreathing && phase !== 'idle' ? 'pointer' : 'default'
             }}
+            onClick={isBreathing && phase !== 'idle' ? togglePause : undefined}
+            whileHover={isBreathing && phase !== 'idle' && !isMobile ? { scale: 1.01 } : {}}
+            whileTap={isBreathing && phase !== 'idle' ? { scale: 0.99 } : {}}
           >
             {/* Outer glass ring */}
             <div
@@ -700,23 +714,16 @@ export default function Home() {
               }}
             />
 
-            {/* Inner breathing orb - clickable to pause/resume */}
+            {/* Inner breathing orb */}
             <div className="absolute inset-8 flex items-center justify-center">
-              <motion.div
+              <div
                 className={`${isMobile ? 'w-40 h-40' : 'w-48 h-48'} rounded-full relative breathing-orb backdrop-blur-optimized ${!isPaused && (
                     phase === 'inhale' ? 'breathing-inhale' :
                       phase === 'hold1' ? 'breathing-hold1' :
                         phase === 'exhale' ? 'breathing-exhale' :
                           phase === 'hold2' ? 'breathing-hold2' : ''
                   )
-                  } ${isMobile ? 'mobile-simple-shadow' : ''} ${isBreathing && phase !== 'idle' ? 'cursor-pointer' : ''}`}
-                onClick={isBreathing && phase !== 'idle' ? () => togglePause() : undefined}
-                onTouchEnd={isBreathing && phase !== 'idle' && isMobile ? (e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                } : undefined}
-                whileHover={isBreathing && phase !== 'idle' && !isMobile ? { scale: 1.02 } : {}}
-                whileTap={isBreathing && phase !== 'idle' ? { scale: 0.98 } : {}}
+                  } ${isMobile ? 'mobile-simple-shadow' : ''}`}
                 style={{
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   ['--inhale-duration' as any]: `${currentPattern.inhale}s`,
@@ -741,11 +748,7 @@ export default function Home() {
                       0 0 60px rgba(59, 130, 246, ${isBreathing ? 0.3 : 0.1}),
                       0 0 100px rgba(147, 51, 234, ${isBreathing ? 0.2 : 0.05})
                     `,
-                  transition: 'background 0.6s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.6s cubic-bezier(0.32, 0.72, 0, 1)',
-                  pointerEvents: isBreathing && phase !== 'idle' ? 'auto' : 'none',
-                  zIndex: 1,
-                  WebkitTapHighlightColor: 'transparent',
-                  touchAction: 'manipulation'
+                  transition: 'background 0.6s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.6s cubic-bezier(0.32, 0.72, 0, 1)'
                 }}
               >
                 {/* Liquid highlight - disable rotation on mobile */}
@@ -792,7 +795,7 @@ export default function Home() {
                     </motion.div>
                   </AnimatePresence>
                 </div>
-              </motion.div>
+              </div>
             </div>
 
             {/* Progress ring */}
