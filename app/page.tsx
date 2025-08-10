@@ -341,7 +341,7 @@ export default function Home() {
       </motion.button>
 
       {/* Stats display */}
-      {(cycles > 0 || totalBreaths > 0) && (
+      {isBreathing && (cycles > 0 || sessionTime > 0) && (
         <motion.div
           className={`${isMobile ? 'fixed bottom-24 left-4' : 'absolute top-8 left-8'} z-20`}
           initial={{ opacity: 0, x: -20 }}
@@ -353,19 +353,29 @@ export default function Home() {
               <div className="text-sm text-white/90 font-light">{formatTime(sessionTime)}</div>
               <div className="text-xs text-white/50 mt-1">Cycles: {cycles}</div>
             </div>
-            {totalBreaths > 0 && (
-              <div className="bg-white/5 backdrop-blur-md rounded-xl px-4 py-2 border border-white/10 group cursor-pointer"
-                onClick={() => {
-                  if (window.confirm('Reset total breath count?')) {
-                    setTotalBreaths(0)
-                  }
-                }}
-                title="Click to reset">
-                <div className="text-xs text-white/50">Total lifetime</div>
-                <div className="text-sm text-white/90 font-light">{totalBreaths} breaths</div>
-                <div className="text-xs text-white/30 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Click to reset</div>
-              </div>
-            )}
+          </div>
+        </motion.div>
+      )}
+      
+      {/* Total breaths display - separate from session stats */}
+      {totalBreaths > 0 && !isBreathing && (
+        <motion.div
+          className={`${isMobile ? 'fixed bottom-24 left-4' : 'absolute top-8 left-8'} z-20`}
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+        >
+          <div className="space-y-2">
+            <div className="bg-white/5 backdrop-blur-md rounded-xl px-4 py-2 border border-white/10 group cursor-pointer"
+              onClick={() => {
+                if (window.confirm('Reset total breath count?')) {
+                  setTotalBreaths(0)
+                }
+              }}
+              title="Click to reset">
+              <div className="text-xs text-white/50">Total lifetime</div>
+              <div className="text-sm text-white/90 font-light">{totalBreaths} breaths</div>
+              <div className="text-xs text-white/30 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Click to reset</div>
+            </div>
           </div>
         </motion.div>
       )}
@@ -381,14 +391,14 @@ export default function Home() {
             onClick={() => setShowSettings(false)}
           >
             <motion.div
-              className="bg-gray-900/90 backdrop-blur-xl rounded-3xl p-6 sm:p-8 max-w-lg w-full my-auto border border-white/10 max-h-[90vh] overflow-y-auto custom-scrollbar"
+              className={`bg-gray-900/90 backdrop-blur-xl rounded-3xl ${isMobile ? 'p-4 pb-20' : 'p-6 sm:p-8'} max-w-lg w-full my-auto border border-white/10 max-h-[90vh] ${isMobile ? 'flex flex-col' : ''}`}
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.2) transparent' }}
             >
-              <h2 className="text-2xl font-light text-white mb-6">Breathing Patterns</h2>
+              <div className={`${isMobile ? 'flex-1 overflow-y-auto' : 'overflow-y-auto custom-scrollbar max-h-[calc(90vh-100px)]'}`} style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.2) transparent' }}>
+                <h2 className="text-2xl font-light text-white mb-6">Breathing Patterns</h2>
 
               <div className="space-y-3 mb-6">
                 {breathingPatterns.map((pattern, index) => (
@@ -585,11 +595,13 @@ export default function Home() {
                     <kbd className="px-2 py-1 bg-white/10 rounded">Esc</kbd>
                   </div>
                 </div>
+                </div>
               </div>
 
+              {/* Done button - fixed on mobile */}
               <button
                 onClick={() => setShowSettings(false)}
-                className="w-full py-3 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-colors"
+                className={`${isMobile ? 'fixed bottom-4 left-4 right-4 z-40' : 'w-full mt-4'} py-3 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-colors backdrop-blur-md`}
               >
                 Done
               </button>
