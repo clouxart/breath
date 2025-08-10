@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 export type SoundType = 'bell' | 'chime' | 'bowl' | 'gong' | 'singing-bowl' | 'none'
 export type AmbientType = 'ocean' | 'rain' | 'forest' | 'birds' | 'thunder' | 'wind' | 'whitenoise' | 'none'
 
-interface SoundConfig {
+export interface SoundConfig {
   phaseIndicator: SoundType
   ambient: AmbientType
   ambientVolume: number
