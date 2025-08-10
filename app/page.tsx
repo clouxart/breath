@@ -55,7 +55,8 @@ export default function Home() {
     updateAmbientVolume,
     initializeAudio,
     previewSound,
-    stopPreviewSounds
+    stopPreviewSounds,
+    stopPhaseSounds
   } = useSound()
 
   // Sync sound config with localStorage on mount
@@ -138,7 +139,8 @@ export default function Home() {
     controls.start({ scale: 1 })
     setTotalBreaths(totalBreaths + cycles)
     stopAmbientSound()
-  }, [controls, cycles, stopAmbientSound, setTotalBreaths, totalBreaths])
+    stopPhaseSounds() // Stop any playing phase sounds
+  }, [controls, cycles, stopAmbientSound, stopPhaseSounds, setTotalBreaths, totalBreaths])
 
   const togglePause = useCallback(() => {
     if (isBreathing && phase !== 'idle') {
@@ -146,13 +148,14 @@ export default function Home() {
         const newPaused = !prev
         if (newPaused) {
           pauseAmbientSound()
+          stopPhaseSounds() // Stop phase sounds when pausing
         } else {
           resumeAmbientSound()
         }
         return newPaused
       })
     }
-  }, [isBreathing, phase, pauseAmbientSound, resumeAmbientSound])
+  }, [isBreathing, phase, pauseAmbientSound, resumeAmbientSound, stopPhaseSounds])
 
   const getActivePhases = useCallback(() => {
     const phases = []
@@ -298,6 +301,7 @@ export default function Home() {
         if (isBreathing && isPaused) {
           setIsPaused(false)
         }
+        stopPreviewSounds() // Stop any preview sounds when closing
       }
       // 'S' to toggle settings
       if (e.code === 'KeyS' && !e.metaKey && !e.ctrlKey) {
@@ -308,7 +312,7 @@ export default function Home() {
 
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [isBreathing, showSettings, startBreathing, stopBreathing, isPaused])
+  }, [isBreathing, showSettings, startBreathing, stopBreathing, isPaused, stopPreviewSounds])
 
   const activePhases = getActivePhases()
   const currentPhaseIndex = activePhases.indexOf(phase) + 1
@@ -349,6 +353,7 @@ export default function Home() {
           // Auto-pause if breathing
           if (isBreathing && !showSettings) {
             setIsPaused(true)
+            stopPhaseSounds() // Stop sounds when opening settings
           }
         }}
         whileHover={{ scale: 1.05 }}
@@ -428,6 +433,7 @@ export default function Home() {
         isPaused={isPaused}
         setIsPaused={setIsPaused}
         isMobile={isMobile}
+        stopPhaseSounds={stopPhaseSounds}
       />
 
       <div className={`max-w-2xl w-full ${isMobile ? 'space-y-6' : 'space-y-12'} text-center relative z-10`}>

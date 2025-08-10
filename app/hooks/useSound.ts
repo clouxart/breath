@@ -94,6 +94,8 @@ export const useSound = () => {
   const ambientGainRef = useRef<GainNode | null>(null)
   const ambientAudioRef = useRef<HTMLAudioElement | null>(null)
   const previewTimeoutsRef = useRef<NodeJS.Timeout[]>([])
+  const phaseTimeoutsRef = useRef<NodeJS.Timeout[]>([])
+  const phaseSoundsRef = useRef<HTMLAudioElement[]>([])
   
   const [soundConfig, setSoundConfig] = useState<SoundConfig>({
     phaseIndicator: 'bell',
@@ -121,8 +123,24 @@ export const useSound = () => {
     }
   }, [])
 
+  const stopPhaseSounds = useCallback(() => {
+    // Clear all phase timeouts
+    phaseTimeoutsRef.current.forEach(timeout => clearTimeout(timeout))
+    phaseTimeoutsRef.current = []
+    
+    // Stop all phase audio elements
+    phaseSoundsRef.current.forEach(audio => {
+      audio.pause()
+      audio.currentTime = 0
+    })
+    phaseSoundsRef.current = []
+  }, [])
+
   const playPhaseSound = useCallback((phase: 'inhale' | 'exhale' | 'hold1' | 'hold2') => {
     if (!soundConfig.enabled || soundConfig.phaseIndicator === 'none' || !audioContextRef.current) return
+    
+    // Clear any previous phase sounds
+    stopPhaseSounds()
     
     const context = audioContextRef.current
     
@@ -142,9 +160,10 @@ export const useSound = () => {
           createChimeSound(context, soundConfig.indicatorVolume)
         } else if (phase === 'exhale') {
           // Reverse chime for exhale
-          setTimeout(() => createOscillatorSound(context, 987.77, 'sine', 0.8, soundConfig.indicatorVolume * 0.4), 0)
-          setTimeout(() => createOscillatorSound(context, 783.99, 'sine', 0.8, soundConfig.indicatorVolume * 0.4), 100)
-          setTimeout(() => createOscillatorSound(context, 659.25, 'sine', 0.8, soundConfig.indicatorVolume * 0.4), 200)
+          const t1 = setTimeout(() => createOscillatorSound(context, 987.77, 'sine', 0.8, soundConfig.indicatorVolume * 0.4), 0)
+          const t2 = setTimeout(() => createOscillatorSound(context, 783.99, 'sine', 0.8, soundConfig.indicatorVolume * 0.4), 100)
+          const t3 = setTimeout(() => createOscillatorSound(context, 659.25, 'sine', 0.8, soundConfig.indicatorVolume * 0.4), 200)
+          phaseTimeoutsRef.current = [t1, t2, t3]
         }
         break
       case 'bowl':
@@ -163,10 +182,11 @@ export const useSound = () => {
           const audio = new Audio('/sounds/singing-bowl.mp3')
           audio.volume = soundConfig.indicatorVolume
           audio.play().catch(err => console.warn('Failed to play singing bowl:', err))
+          phaseSoundsRef.current.push(audio)
         }
         break
     }
-  }, [soundConfig])
+  }, [soundConfig, stopPhaseSounds])
 
   const startAmbientSound = useCallback(() => {
     if (!soundConfig.enabled || soundConfig.ambient === 'none') return
@@ -262,7 +282,7 @@ export const useSound = () => {
     previewTimeoutsRef.current = []
   }, [])
 
-  const previewSound = useCallback((type: SoundType) => {
+  const previewSound = useCallback(async (type: SoundType) => {
     if (!soundConfig.enabled || type === 'none') return
     
     // Clear any existing preview sounds
@@ -274,6 +294,15 @@ export const useSound = () => {
     }
     
     const context = audioContextRef.current
+    
+    // Resume context if suspended (critical for mobile)
+    if (context.state === 'suspended') {
+      try {
+        await context.resume()
+      } catch (err) {
+        console.warn('Failed to resume audio context:', err)
+      }
+    }
     
     switch (type) {
       case 'bell':
@@ -309,6 +338,7 @@ export const useSound = () => {
     updateAmbientVolume,
     initializeAudio,
     previewSound,
-    stopPreviewSounds
+    stopPreviewSounds,
+    stopPhaseSounds
   }
 }

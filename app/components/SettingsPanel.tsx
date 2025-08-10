@@ -32,6 +32,7 @@ interface SettingsPanelProps {
   isPaused: boolean
   setIsPaused: (paused: boolean) => void
   isMobile: boolean
+  stopPhaseSounds?: () => void
 }
 
 type TabType = 'patterns' | 'sounds' | 'shortcuts'
@@ -54,12 +55,14 @@ export default function SettingsPanel({
   isBreathing,
   isPaused,
   setIsPaused,
-  isMobile
+  isMobile,
+  stopPhaseSounds
 }: SettingsPanelProps) {
   const [activeTab, setActiveTab] = useState<TabType>('patterns')
 
   const handleClose = () => {
     setShowSettings(false)
+    stopPreviewSounds() // Stop any preview sounds
     if (isBreathing && isPaused) {
       setIsPaused(false)
     }
