@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+
+# Run lint-staged for linting
+npx lint-staged
+
+# Run build to ensure the project builds successfully
+echo "🔨 Running build check..."
+npm run build
+
+# If build fails, the commit will be aborted
+if [ $? -ne 0 ]; then
+  echo "❌ Build failed! Please fix the errors before committing."
+  exit 1
+fi
+
+echo "✅ All checks passed!"

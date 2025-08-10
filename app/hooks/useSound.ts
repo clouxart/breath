@@ -67,6 +67,14 @@ const createGongSound = (context: AudioContext, volume: number) => {
   createOscillatorSound(context, 440, 'triangle', 2.5, volume * 0.2) // A4
 }
 
+const createSingingBowlSound = (context: AudioContext, volume: number) => {
+  // Singing bowl from Moodist - similar to bowl but with longer sustain
+  createOscillatorSound(context, 440, 'sine', 3, volume * 0.4) // A4
+  createOscillatorSound(context, 880, 'sine', 2.5, volume * 0.3) // A5
+  createOscillatorSound(context, 1320, 'sine', 2, volume * 0.2) // E6
+  createOscillatorSound(context, 1760, 'sine', 1.5, volume * 0.1) // A6
+}
+
 // Local ambient sound files from Moodist (MIT licensed)
 const AMBIENT_SOUND_URLS: Record<Exclude<AmbientType, 'none' | 'whitenoise'>, string> = {
   ocean: '/sounds/ocean.mp3',

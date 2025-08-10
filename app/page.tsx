@@ -69,7 +69,7 @@ export default function Home() {
 
   const controls = useAnimation()
   const currentPattern = selectedPattern === 4 ? customDurations : breathingPatterns[selectedPattern]
-  
+
   // Update total cycle duration when pattern changes
   useEffect(() => {
     const total = currentPattern.inhale + currentPattern.hold1 + currentPattern.exhale + currentPattern.hold2
@@ -84,7 +84,7 @@ export default function Home() {
 
   // Detect mobile device
   const [isMobile, setIsMobile] = useState(false)
-  
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768 || 'ontouchstart' in window)
@@ -296,7 +296,7 @@ export default function Home() {
 
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [isBreathing, showSettings, startBreathing, stopBreathing])
+  }, [isBreathing, showSettings, startBreathing, stopBreathing, isPaused])
 
   const activePhases = getActivePhases()
   const currentPhaseIndex = activePhases.indexOf(phase) + 1
@@ -313,11 +313,11 @@ export default function Home() {
       {/* Gradient mesh background - Apple style */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-b from-gray-900 via-black to-black" />
-        <div 
+        <div
           className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[120px] floating-gradient gpu-accelerated"
           style={{ animationDelay: '0s' }}
         />
-        <div 
+        <div
           className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-purple-600/20 rounded-full blur-[120px] floating-gradient gpu-accelerated"
           style={{ animationDelay: '5s' }}
         />
@@ -374,10 +374,10 @@ export default function Home() {
               <div className="text-xs text-white/50 mt-1">Cycles: {cycles}</div>
             </div>
           )}
-          
+
           {/* Total lifetime breaths - always shown */}
           {totalBreaths > 0 && (
-            <div 
+            <div
               className="bg-white/5 backdrop-blur-md rounded-xl px-4 py-2 border border-white/10 group cursor-pointer"
               onClick={() => {
                 if (window.confirm('Reset total breath count?')) {
@@ -422,211 +422,211 @@ export default function Home() {
               <div className={`${isMobile ? 'flex-1 overflow-y-auto' : 'overflow-y-auto custom-scrollbar max-h-[calc(90vh-100px)]'}`} style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.2) transparent' }}>
                 <h2 className="text-2xl font-light text-white mb-6">Breathing Patterns</h2>
 
-              <div className="space-y-3 mb-6">
-                {breathingPatterns.map((pattern, index) => (
-                  <motion.button
-                    key={pattern.name}
-                    className={`w-full text-left p-4 rounded-2xl transition-all ${selectedPattern === index
+                <div className="space-y-3 mb-6">
+                  {breathingPatterns.map((pattern, index) => (
+                    <motion.button
+                      key={pattern.name}
+                      className={`w-full text-left p-4 rounded-2xl transition-all ${selectedPattern === index
                         ? 'bg-blue-600/20 border border-blue-500/50'
                         : 'bg-white/5 border border-white/10 hover:bg-white/10'
-                      }`}
-                    onClick={() => setSelectedPattern(index)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="text-white font-medium">{pattern.name}</div>
-                        <div className="text-xs text-white/50 mt-1">{pattern.description}</div>
+                        }`}
+                      onClick={() => setSelectedPattern(index)}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="text-white font-medium">{pattern.name}</div>
+                          <div className="text-xs text-white/50 mt-1">{pattern.description}</div>
+                        </div>
+                        <div className="text-xs text-white/70">
+                          {pattern.inhale}-{pattern.hold1}-{pattern.exhale}-{pattern.hold2}
+                        </div>
                       </div>
-                      <div className="text-xs text-white/70">
-                        {pattern.inhale}-{pattern.hold1}-{pattern.exhale}-{pattern.hold2}
-                      </div>
-                    </div>
-                  </motion.button>
-                ))}
-              </div>
-
-              {/* Custom duration controls */}
-              {selectedPattern === 4 && (
-                <motion.div
-                  className="space-y-4 mb-6 p-4 bg-white/5 rounded-2xl"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                >
-                  <div>
-                    <label className="text-xs text-white/50 block mb-2">Inhale ({customDurations.inhale}s)</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="10"
-                      value={customDurations.inhale}
-                      onChange={(e) => setCustomDurations({ ...customDurations, inhale: Number(e.target.value) })}
-                      className="w-full accent-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-white/50 block mb-2">Hold ({customDurations.hold1}s)</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="10"
-                      value={customDurations.hold1}
-                      onChange={(e) => setCustomDurations({ ...customDurations, hold1: Number(e.target.value) })}
-                      className="w-full accent-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-white/50 block mb-2">Exhale ({customDurations.exhale}s)</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="10"
-                      value={customDurations.exhale}
-                      onChange={(e) => setCustomDurations({ ...customDurations, exhale: Number(e.target.value) })}
-                      className="w-full accent-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-white/50 block mb-2">Hold Empty ({customDurations.hold2}s)</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="10"
-                      value={customDurations.hold2}
-                      onChange={(e) => setCustomDurations({ ...customDurations, hold2: Number(e.target.value) })}
-                      className="w-full accent-blue-500"
-                    />
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Sound Settings */}
-              <div className="space-y-4 p-4 bg-white/5 rounded-2xl mb-6">
-                <div className="flex items-center justify-between">
-                  <span className="text-white/70 text-sm">Enable Sounds</span>
-                  <button
-                    onClick={() => {
-                      const newEnabled = !soundConfig.enabled
-                      setSoundConfig({ ...soundConfig, enabled: newEnabled })
-                      if (newEnabled) {
-                        initializeAudio()
-                      }
-                    }}
-                    className={`relative w-12 h-6 rounded-full transition-colors ${soundConfig.enabled ? 'bg-blue-500' : 'bg-gray-600'
-                      }`}
-                  >
-                    <motion.div
-                      className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full"
-                      animate={{ x: soundConfig.enabled ? 24 : 0 }}
-                      transition={{ type: 'spring', stiffness: 300 }}
-                    />
-                  </button>
+                    </motion.button>
+                  ))}
                 </div>
 
-                {soundConfig.enabled && (
+                {/* Custom duration controls */}
+                {selectedPattern === 4 && (
                   <motion.div
+                    className="space-y-4 mb-6 p-4 bg-white/5 rounded-2xl"
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
-                    className="space-y-4"
                   >
                     <div>
-                      <label className="text-xs text-white/50 block mb-2">Phase Indicator Sound</label>
-                      <div className="flex gap-2">
-                        <select
-                          value={soundConfig.phaseIndicator}
-                          onChange={(e) => setSoundConfig({ ...soundConfig, phaseIndicator: e.target.value as SoundType })}
-                          className="flex-1 bg-white/10 text-white rounded-lg px-3 py-2 text-sm border border-white/10"
-                        >
-                          <option value="bell">Bell</option>
-                          <option value="chime">Wind Chime</option>
-                          <option value="bowl">Tibetan Bowl</option>
-                          <option value="gong">Deep Gong</option>
-                          <option value="singing-bowl">Singing Bowl (Moodist)</option>
-                          <option value="none">None</option>
-                        </select>
-                        {soundConfig.phaseIndicator !== 'none' && (
-                          <button
-                            onClick={() => previewSound(soundConfig.phaseIndicator)}
-                            className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors text-sm"
-                          >
-                            Preview
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-xs text-white/50 block mb-2">Indicator Volume ({Math.round(soundConfig.indicatorVolume * 100)}%)</label>
+                      <label className="text-xs text-white/50 block mb-2">Inhale ({customDurations.inhale}s)</label>
                       <input
                         type="range"
                         min="0"
-                        max="100"
-                        value={soundConfig.indicatorVolume * 100}
-                        onChange={(e) => setSoundConfig({ ...soundConfig, indicatorVolume: Number(e.target.value) / 100 })}
+                        max="10"
+                        value={customDurations.inhale}
+                        onChange={(e) => setCustomDurations({ ...customDurations, inhale: Number(e.target.value) })}
                         className="w-full accent-blue-500"
                       />
                     </div>
-
                     <div>
-                      <label className="text-xs text-white/50 block mb-2">Ambient Sound</label>
-                      <select
-                        value={soundConfig.ambient}
-                        onChange={(e) => {
-                          const newAmbient = e.target.value as AmbientType
-                          setSoundConfig({ ...soundConfig, ambient: newAmbient })
-                        }}
-                        className="w-full bg-white/10 text-white rounded-lg px-3 py-2 text-sm border border-white/10"
-                      >
-                        <option value="none">None</option>
-                        <option value="ocean">Ocean Waves</option>
-                        <option value="rain">Light Rain</option>
-                        <option value="forest">River Stream</option>
-                        <option value="birds">Birds Chirping</option>
-                        <option value="thunder">Thunder Storm</option>
-                        <option value="wind">Wind</option>
-                        <option value="whitenoise">White Noise</option>
-                      </select>
+                      <label className="text-xs text-white/50 block mb-2">Hold ({customDurations.hold1}s)</label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="10"
+                        value={customDurations.hold1}
+                        onChange={(e) => setCustomDurations({ ...customDurations, hold1: Number(e.target.value) })}
+                        className="w-full accent-blue-500"
+                      />
                     </div>
+                    <div>
+                      <label className="text-xs text-white/50 block mb-2">Exhale ({customDurations.exhale}s)</label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="10"
+                        value={customDurations.exhale}
+                        onChange={(e) => setCustomDurations({ ...customDurations, exhale: Number(e.target.value) })}
+                        className="w-full accent-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-white/50 block mb-2">Hold Empty ({customDurations.hold2}s)</label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="10"
+                        value={customDurations.hold2}
+                        onChange={(e) => setCustomDurations({ ...customDurations, hold2: Number(e.target.value) })}
+                        className="w-full accent-blue-500"
+                      />
+                    </div>
+                  </motion.div>
+                )}
 
-                    {soundConfig.ambient !== 'none' && (
+                {/* Sound Settings */}
+                <div className="space-y-4 p-4 bg-white/5 rounded-2xl mb-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-white/70 text-sm">Enable Sounds</span>
+                    <button
+                      onClick={() => {
+                        const newEnabled = !soundConfig.enabled
+                        setSoundConfig({ ...soundConfig, enabled: newEnabled })
+                        if (newEnabled) {
+                          initializeAudio()
+                        }
+                      }}
+                      className={`relative w-12 h-6 rounded-full transition-colors ${soundConfig.enabled ? 'bg-blue-500' : 'bg-gray-600'
+                        }`}
+                    >
+                      <motion.div
+                        className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full"
+                        animate={{ x: soundConfig.enabled ? 24 : 0 }}
+                        transition={{ type: 'spring', stiffness: 300 }}
+                      />
+                    </button>
+                  </div>
+
+                  {soundConfig.enabled && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="space-y-4"
+                    >
                       <div>
-                        <label className="text-xs text-white/50 block mb-2">Ambient Volume ({Math.round(soundConfig.ambientVolume * 100)}%)</label>
+                        <label className="text-xs text-white/50 block mb-2">Phase Indicator Sound</label>
+                        <div className="flex gap-2">
+                          <select
+                            value={soundConfig.phaseIndicator}
+                            onChange={(e) => setSoundConfig({ ...soundConfig, phaseIndicator: e.target.value as SoundType })}
+                            className="flex-1 bg-white/10 text-white rounded-lg px-3 py-2 text-sm border border-white/10"
+                          >
+                            <option value="bell">Bell</option>
+                            <option value="chime">Wind Chime</option>
+                            <option value="bowl">Tibetan Bowl</option>
+                            <option value="gong">Deep Gong</option>
+                            <option value="singing-bowl">Singing Bowl</option>
+                            <option value="none">None</option>
+                          </select>
+                          {soundConfig.phaseIndicator !== 'none' && (
+                            <button
+                              onClick={() => previewSound(soundConfig.phaseIndicator)}
+                              className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors text-sm"
+                            >
+                              Preview
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-xs text-white/50 block mb-2">Indicator Volume ({Math.round(soundConfig.indicatorVolume * 100)}%)</label>
                         <input
                           type="range"
                           min="0"
                           max="100"
-                          value={soundConfig.ambientVolume * 100}
-                          onChange={(e) => {
-                            const newVolume = Number(e.target.value) / 100
-                            setSoundConfig({ ...soundConfig, ambientVolume: newVolume })
-                            updateAmbientVolume(newVolume)
-                          }}
+                          value={soundConfig.indicatorVolume * 100}
+                          onChange={(e) => setSoundConfig({ ...soundConfig, indicatorVolume: Number(e.target.value) / 100 })}
                           className="w-full accent-blue-500"
                         />
                       </div>
-                    )}
-                  </motion.div>
-                )}
-              </div>
 
-              {/* Keyboard shortcuts guide */}
-              <div className="p-4 bg-white/5 rounded-2xl mb-6">
-                <h3 className="text-sm font-medium text-white/70 mb-2">Keyboard Shortcuts</h3>
-                <div className="space-y-1 text-xs text-white/50">
-                  <div className="flex justify-between">
-                    <span>Start/Stop</span>
-                    <kbd className="px-2 py-1 bg-white/10 rounded">Space</kbd>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Settings</span>
-                    <kbd className="px-2 py-1 bg-white/10 rounded">S</kbd>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Close Settings</span>
-                    <kbd className="px-2 py-1 bg-white/10 rounded">Esc</kbd>
-                  </div>
+                      <div>
+                        <label className="text-xs text-white/50 block mb-2">Ambient Sound</label>
+                        <select
+                          value={soundConfig.ambient}
+                          onChange={(e) => {
+                            const newAmbient = e.target.value as AmbientType
+                            setSoundConfig({ ...soundConfig, ambient: newAmbient })
+                          }}
+                          className="w-full bg-white/10 text-white rounded-lg px-3 py-2 text-sm border border-white/10"
+                        >
+                          <option value="none">None</option>
+                          <option value="ocean">Ocean Waves</option>
+                          <option value="rain">Light Rain</option>
+                          <option value="forest">River Stream</option>
+                          <option value="birds">Birds Chirping</option>
+                          <option value="thunder">Thunder Storm</option>
+                          <option value="wind">Wind</option>
+                          <option value="whitenoise">White Noise</option>
+                        </select>
+                      </div>
+
+                      {soundConfig.ambient !== 'none' && (
+                        <div>
+                          <label className="text-xs text-white/50 block mb-2">Ambient Volume ({Math.round(soundConfig.ambientVolume * 100)}%)</label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={soundConfig.ambientVolume * 100}
+                            onChange={(e) => {
+                              const newVolume = Number(e.target.value) / 100
+                              setSoundConfig({ ...soundConfig, ambientVolume: newVolume })
+                              updateAmbientVolume(newVolume)
+                            }}
+                            className="w-full accent-blue-500"
+                          />
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
                 </div>
+
+                {/* Keyboard shortcuts guide */}
+                <div className="p-4 bg-white/5 rounded-2xl mb-6">
+                  <h3 className="text-sm font-medium text-white/70 mb-2">Keyboard Shortcuts</h3>
+                  <div className="space-y-1 text-xs text-white/50">
+                    <div className="flex justify-between">
+                      <span>Start/Stop</span>
+                      <kbd className="px-2 py-1 bg-white/10 rounded">Space</kbd>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Settings</span>
+                      <kbd className="px-2 py-1 bg-white/10 rounded">S</kbd>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Close Settings</span>
+                      <kbd className="px-2 py-1 bg-white/10 rounded">Esc</kbd>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -692,7 +692,7 @@ export default function Home() {
                 backdropFilter: isMobile ? 'blur(8px)' : 'blur(20px)',
                 WebkitBackdropFilter: isMobile ? 'blur(8px)' : 'blur(20px)',
                 border: '1px solid rgba(255,255,255,0.1)',
-                boxShadow: isMobile 
+                boxShadow: isMobile
                   ? undefined
                   : 'inset 0 0 40px rgba(255,255,255,0.05), 0 20px 40px -20px rgba(0,0,0,0.5)',
                 transform: isBreathing ? 'scale(1.02)' : 'scale(1)',
@@ -703,14 +703,13 @@ export default function Home() {
             {/* Inner breathing orb - clickable to pause/resume */}
             <div className="absolute inset-8 flex items-center justify-center">
               <motion.div
-                className={`${isMobile ? 'w-40 h-40' : 'w-48 h-48'} rounded-full relative breathing-orb backdrop-blur-optimized ${
-                  !isPaused && (
+                className={`${isMobile ? 'w-40 h-40' : 'w-48 h-48'} rounded-full relative breathing-orb backdrop-blur-optimized ${!isPaused && (
                     phase === 'inhale' ? 'breathing-inhale' :
-                    phase === 'hold1' ? 'breathing-hold1' :
-                    phase === 'exhale' ? 'breathing-exhale' :
-                    phase === 'hold2' ? 'breathing-hold2' : ''
+                      phase === 'hold1' ? 'breathing-hold1' :
+                        phase === 'exhale' ? 'breathing-exhale' :
+                          phase === 'hold2' ? 'breathing-hold2' : ''
                   )
-                } ${isMobile ? 'mobile-simple-shadow' : ''} ${isBreathing && phase !== 'idle' ? 'cursor-pointer' : ''}`}
+                  } ${isMobile ? 'mobile-simple-shadow' : ''} ${isBreathing && phase !== 'idle' ? 'cursor-pointer' : ''}`}
                 onClick={isBreathing && phase !== 'idle' ? () => togglePause() : undefined}
                 onTouchEnd={isBreathing && phase !== 'idle' && isMobile ? (e) => {
                   e.preventDefault()
