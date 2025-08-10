@@ -340,45 +340,42 @@ export default function Home() {
         </div>
       </motion.button>
 
-      {/* Stats display */}
-      {isBreathing && (cycles > 0 || sessionTime > 0) && (
-        <motion.div
-          className={`${isMobile ? 'fixed bottom-24 left-4' : 'absolute top-8 left-8'} z-20`}
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-        >
-          <div className="space-y-2">
+      {/* Unified Stats Display */}
+      <motion.div
+        className={`absolute top-8 left-8 z-20`}
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+      >
+        <div className="space-y-2">
+          {/* Session stats - shown during breathing */}
+          {isBreathing && (cycles > 0 || sessionTime > 0) && (
             <div className="bg-white/5 backdrop-blur-md rounded-xl px-4 py-2 border border-white/10">
               <div className="text-xs text-white/50">Session</div>
               <div className="text-sm text-white/90 font-light">{formatTime(sessionTime)}</div>
               <div className="text-xs text-white/50 mt-1">Cycles: {cycles}</div>
             </div>
-          </div>
-        </motion.div>
-      )}
-      
-      {/* Total breaths display - separate from session stats */}
-      {totalBreaths > 0 && !isBreathing && (
-        <motion.div
-          className={`${isMobile ? 'fixed bottom-24 left-4' : 'absolute top-8 left-8'} z-20`}
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-        >
-          <div className="space-y-2">
-            <div className="bg-white/5 backdrop-blur-md rounded-xl px-4 py-2 border border-white/10 group cursor-pointer"
+          )}
+          
+          {/* Total lifetime breaths - always shown */}
+          {totalBreaths > 0 && (
+            <div 
+              className="bg-white/5 backdrop-blur-md rounded-xl px-4 py-2 border border-white/10 group cursor-pointer"
               onClick={() => {
                 if (window.confirm('Reset total breath count?')) {
                   setTotalBreaths(0)
                 }
               }}
-              title="Click to reset">
+              title="Click to reset"
+            >
               <div className="text-xs text-white/50">Total lifetime</div>
               <div className="text-sm text-white/90 font-light">{totalBreaths} breaths</div>
-              <div className="text-xs text-white/30 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Click to reset</div>
+              {!isBreathing && (
+                <div className="text-xs text-white/30 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Click to reset</div>
+              )}
             </div>
-          </div>
-        </motion.div>
-      )}
+          )}
+        </div>
+      </motion.div>
 
       {/* Settings panel */}
       <AnimatePresence>
@@ -784,23 +781,6 @@ export default function Home() {
           </motion.div>
         </motion.div>
 
-        {/* Cycle counter */}
-        <AnimatePresence>
-          {cycles > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 10, filter: 'blur(10px)' }}
-              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, y: 10, filter: 'blur(10px)' }}
-              transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
-              className="text-center"
-            >
-              <span className="text-5xl font-ultralight text-white/90">{cycles}</span>
-              <span className="text-lg font-light text-white/50 ml-3">
-                {cycles === 1 ? 'cycle' : 'cycles'}
-              </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* Control button - Apple style */}
         <motion.div
