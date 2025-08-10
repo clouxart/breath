@@ -421,18 +421,19 @@ export default function Home() {
       <AnimatePresence>
         {showSettings && (
           <motion.div
-            className="absolute inset-0 z-30 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-30 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setShowSettings(false)}
           >
             <motion.div
-              className="bg-gray-900/90 backdrop-blur-xl rounded-3xl p-8 max-w-lg w-full mx-4 border border-white/10"
+              className="bg-gray-900/90 backdrop-blur-xl rounded-3xl p-6 sm:p-8 max-w-lg w-full my-auto border border-white/10 max-h-[90vh] overflow-y-auto custom-scrollbar"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
+              style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.2) transparent' }}
             >
               <h2 className="text-2xl font-light text-white mb-6">Breathing Patterns</h2>
 
