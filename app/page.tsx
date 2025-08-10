@@ -68,17 +68,30 @@ export default function Home() {
   const controls = useAnimation()
   const currentPattern = selectedPattern === 4 ? customDurations : breathingPatterns[selectedPattern]
 
-  // Smooth spring-based mouse tracking for liquid effect
+  // Detect mobile device
+  const [isMobile, setIsMobile] = useState(false)
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768 || 'ontouchstart' in window)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Smooth spring-based mouse tracking for liquid effect (disabled on mobile)
   const mouseX = useMotionValue(0)
   const mouseY = useMotionValue(0)
   const smoothMouseX = useSpring(mouseX, { stiffness: 50, damping: 20 })
   const smoothMouseY = useSpring(mouseY, { stiffness: 50, damping: 20 })
 
-  // Subtle 3D tilt
-  const rotateX = useTransform(smoothMouseY, [-300, 300], [2, -2])
-  const rotateY = useTransform(smoothMouseX, [-300, 300], [-2, 2])
+  // Subtle 3D tilt (disabled on mobile for performance)
+  const rotateX = useTransform(smoothMouseY, [-300, 300], isMobile ? [0, 0] : [2, -2])
+  const rotateY = useTransform(smoothMouseX, [-300, 300], isMobile ? [0, 0] : [-2, 2])
 
   const handleMouseMove = (e: React.MouseEvent) => {
+    if (isMobile) return // Skip mouse tracking on mobile
     const rect = e.currentTarget.getBoundingClientRect()
     const x = e.clientX - rect.left - rect.width / 2
     const y = e.clientY - rect.top - rect.height / 2
@@ -349,7 +362,8 @@ export default function Home() {
         className="absolute top-8 right-8 z-20 p-3 rounded-full"
         style={{
           background: 'rgba(255,255,255,0.05)',
-          backdropFilter: 'blur(20px)',
+          backdropFilter: isMobile ? 'blur(8px)' : 'blur(20px)',
+          WebkitBackdropFilter: isMobile ? 'blur(8px)' : 'blur(20px)',
           border: '1px solid rgba(255,255,255,0.1)',
         }}
         onClick={() => setShowSettings(!showSettings)}
@@ -671,9 +685,12 @@ export default function Home() {
               className="absolute inset-0 rounded-full"
               style={{
                 background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
-                backdropFilter: 'blur(20px)',
+                backdropFilter: isMobile ? 'blur(8px)' : 'blur(20px)',
+          WebkitBackdropFilter: isMobile ? 'blur(8px)' : 'blur(20px)',
                 border: '1px solid rgba(255,255,255,0.1)',
-                boxShadow: 'inset 0 0 40px rgba(255,255,255,0.05), 0 20px 40px -20px rgba(0,0,0,0.5)',
+                boxShadow: isMobile 
+                  ? '0 10px 30px rgba(0,0,0,0.3)'
+                  : 'inset 0 0 40px rgba(255,255,255,0.05), 0 20px 40px -20px rgba(0,0,0,0.5)',
               }}
               animate={{
                 scale: isBreathing ? [1, 1.05, 1] : 1,
@@ -697,26 +714,31 @@ export default function Home() {
                     : phase === 'inhale' || phase === 'hold1'
                       ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.5) 0%, rgba(147, 51, 234, 0.5) 100%)'
                       : 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(147, 51, 234, 0.2) 100%)',
-                  backdropFilter: 'blur(40px)',
+                  backdropFilter: isMobile ? 'blur(12px)' : 'blur(40px)',
+                  WebkitBackdropFilter: isMobile ? 'blur(12px)' : 'blur(40px)',
+                  transform: 'translateZ(0)', // Force GPU acceleration
+                  willChange: 'transform',
                   border: '1px solid rgba(255,255,255,0.2)',
-                  boxShadow: `
-                    inset 0 0 30px rgba(255,255,255,0.1),
-                    0 0 60px rgba(59, 130, 246, ${isBreathing ? 0.3 : 0.1}),
-                    0 0 100px rgba(147, 51, 234, ${isBreathing ? 0.2 : 0.05})
-                  `,
+                  boxShadow: isMobile
+                    ? `0 0 40px rgba(59, 130, 246, ${isBreathing ? 0.3 : 0.1})`
+                    : `
+                      inset 0 0 30px rgba(255,255,255,0.1),
+                      0 0 60px rgba(59, 130, 246, ${isBreathing ? 0.3 : 0.1}),
+                      0 0 100px rgba(147, 51, 234, ${isBreathing ? 0.2 : 0.05})
+                    `,
                   transition: 'all 0.6s cubic-bezier(0.32, 0.72, 0, 1)'
                 }}
               >
-                {/* Liquid highlight */}
+                {/* Liquid highlight - disable rotation on mobile */}
                 <motion.div
                   className="absolute inset-2 rounded-full"
                   style={{
                     background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.3) 0%, transparent 60%)',
                   }}
-                  animate={{
+                  animate={isMobile ? {} : {
                     rotate: [0, 360],
                   }}
-                  transition={{
+                  transition={isMobile ? {} : {
                     duration: 30,
                     repeat: Infinity,
                     ease: "linear"
@@ -728,9 +750,9 @@ export default function Home() {
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={phase}
-                      initial={{ opacity: 0, scale: 0.8, filter: 'blur(10px)' }}
-                      animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-                      exit={{ opacity: 0, scale: 0.8, filter: 'blur(10px)' }}
+                      initial={{ opacity: 0, scale: 0.8, filter: isMobile ? 'none' : 'blur(10px)' }}
+                      animate={{ opacity: 1, scale: 1, filter: isMobile ? 'none' : 'blur(0px)' }}
+                      exit={{ opacity: 0, scale: 0.8, filter: isMobile ? 'none' : 'blur(10px)' }}
                       transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
                       className="text-center"
                     >
@@ -774,7 +796,8 @@ export default function Home() {
                   strokeDasharray={980}
                   strokeDashoffset={progressOffset}
                   style={{
-                    transition: 'stroke-dashoffset 0.1s linear'
+                    transition: 'stroke-dashoffset 0.1s linear',
+                    willChange: 'stroke-dashoffset'
                   }}
                 />
               )}
@@ -820,7 +843,8 @@ export default function Home() {
                 className="relative group px-10 py-5 rounded-full overflow-hidden"
                 style={{
                   background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(147, 51, 234, 0.2) 100%)',
-                  backdropFilter: 'blur(20px)',
+                  backdropFilter: isMobile ? 'blur(8px)' : 'blur(20px)',
+          WebkitBackdropFilter: isMobile ? 'blur(8px)' : 'blur(20px)',
                   border: '1px solid rgba(255,255,255,0.1)',
                   boxShadow: '0 10px 40px -10px rgba(59, 130, 246, 0.4)',
                 }}
@@ -847,7 +871,8 @@ export default function Home() {
                 className="relative group px-10 py-5 rounded-full overflow-hidden"
                 style={{
                   background: 'rgba(255,255,255,0.05)',
-                  backdropFilter: 'blur(20px)',
+                  backdropFilter: isMobile ? 'blur(8px)' : 'blur(20px)',
+          WebkitBackdropFilter: isMobile ? 'blur(8px)' : 'blur(20px)',
                   border: '1px solid rgba(255,255,255,0.1)',
                 }}
                 initial={{ opacity: 0 }}
